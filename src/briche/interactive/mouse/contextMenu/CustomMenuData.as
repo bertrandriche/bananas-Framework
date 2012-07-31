@@ -1,6 +1,8 @@
 package briche.interactive.mouse.contextMenu {
 	import flash.display.InteractiveObject;
+	import flash.display.Sprite;
 	import flash.events.ContextMenuEvent;
+	import flash.events.MouseEvent;
 	import flash.ui.ContextMenu;
 	import flash.ui.ContextMenuItem;
 	/**
@@ -10,17 +12,20 @@ package briche.interactive.mouse.contextMenu {
 	public class CustomMenuData {
 		
 		private var _name:String;
-		private var _callBack:Function;
+		private var _openCallBack:Function;
 		private var _target:InteractiveObject;
 		
 		private var _numItems:int;
 		private var _items:Array/*CustomMenuItem*/;
 		private var _menu:ContextMenu;
 		private var _itemsCallBacks:Array;
+		private var _closeCallBack:Function;
+		private var _menuOpen:Boolean = false;
 		
-		public function CustomMenuData(name:String, target:InteractiveObject, menuOpenCallBack:Function) {
+		public function CustomMenuData(name:String, target:InteractiveObject, menuOpenCallBack:Function = null, menuCloseCallBack:Function = null) {
 			_target = target;
-			_callBack = menuOpenCallBack;
+			_openCallBack = menuOpenCallBack;
+			_closeCallBack = menuCloseCallBack;
 			_name = name;
 			
 			_items = [];
@@ -34,12 +39,20 @@ package briche.interactive.mouse.contextMenu {
 		}
 		
 		
-		public function addElement(menuLabel:String, callBackFunction:Function, separatorBefore:Boolean):void {
-			var item:CustomMenuItem = new CustomMenuItem(menuLabel, callBackFunction, separatorBefore);
+		public function addElement(menuLabel:String, callBackFunction:Function = null, separatorBefore:Boolean = false, deactivated:Boolean = false):void {
+			var item:CustomMenuItem = new CustomMenuItem(menuLabel, callBackFunction, separatorBefore, deactivated);
+			
+			item.addEventListener(CustomMenuEvent.ITEM_SELECT, _onMenuClose);
 			
 			_menu.customItems[_numItems] = item.menuItem;
 			_items[_numItems] = item;
 			_numItems++;
+		}
+		
+		private function _onMenuClose(e:CustomMenuEvent = null):void {
+			if (_closeCallBack) _closeCallBack();
+			
+			_menuOpen = false;
 		}
 		
 		public function removeElement(targetElement:String):void {
@@ -59,6 +72,7 @@ package briche.interactive.mouse.contextMenu {
 				
 				for (var i:int = 0; i < _numItems; i++) {
 					if (_items[i].label == targetElement) {
+						_items[i].removeEventListener(CustomMenuEvent.ITEM_SELECT, _onMenuClose);
 						_menu.customItems.splice(i, 1);
 						_items.splice(i, 1);
 						_numItems--;
@@ -83,12 +97,13 @@ package briche.interactive.mouse.contextMenu {
 		public function destroy():void {
 			for (var i:int = 0; i < _numItems; i++) {
 				_items[0].destroy();
+				_items[0].removeEventListener(CustomMenuEvent.ITEM_SELECT, _onMenuClose);
 				_menu.customItems.splice(0, 1);
 				_items.splice(0, 1);
 			}
 			_items = [];
 			_menu.customItems = [];
-			_callBack = null;
+			_openCallBack = null;
 			_numItems = 0;
 			
 			_target.contextMenu = null;
@@ -97,7 +112,9 @@ package briche.interactive.mouse.contextMenu {
 		
 		
 		private function _onMenuOpen(e:ContextMenuEvent):void {
-			if (_callBack != null) _callBack();
+			_menuOpen = true;
+			
+			if (_openCallBack != null) _openCallBack();
 		}
 		
 		public function get name():String {

@@ -1,7 +1,11 @@
 ﻿package briche.interactive.mouse.contextMenu {
 	
 	import flash.display.InteractiveObject;
+	import flash.display.Sprite;
 	import flash.events.EventDispatcher;
+	
+	/// TODO > will be obsolete with the support of the right-click in Flash Player with version 11.2
+	/// TODO > redo to have real custom menu with version 11.2 of Flash Player
 	
 	/**
 	 * ...
@@ -34,14 +38,14 @@
 	 * CustomMenuManager.removeMenu("nomMenu");
 	 *
 	 */
-	
-	 /// TODO > throw errors or just silent ??
 	 
 	 
 	public class CustomMenuManager extends EventDispatcher {
 		
 		private static var _menus:Array/*CustomMenuData*/;
 		static private var _numMenus:int;
+		static private var _willHaveSeparatorBefore:Boolean;
+		static private var _container:Sprite;
 		
 		/**
 		 * INITIALISATION DU CUSTOM CONTEXT MENU MANAGER
@@ -57,31 +61,29 @@
 		 * @param	cible				InteractiveObject	> DisplayObject target for the menu
 		 * @param	menuOpenCallBack	Function			> Function to execute when opening the menu (can be null)
 		 */
-		public static function addMenu(name:String, target:InteractiveObject, menuOpenCallBack:Function = null):void {
+		public static function addMenu(name:String, target:InteractiveObject, menuOpenCallBack:Function = null, menuCloseCallBack:Function = null, label:String = ""):void {
 			
-			var data:CustomMenuData = new CustomMenuData(name, target, menuOpenCallBack);
+			var data:CustomMenuData = new CustomMenuData(name, target, menuOpenCallBack, menuCloseCallBack);
 			
 			_menus[_numMenus] = data;
 			_numMenus++;
+			
+			if (label != "") {
+				addElementToMenu(name, label, null, false, true);
+				_willHaveSeparatorBefore = true;
+			}
 			
 		}
 		
 		/**
 		 * ADD ELEMENT TO SPECIFIED MENU
 		 * @param	nomMenu				String		> Name of the menu to add the specified element
-		 * @param	menuLabel			String		> Label of the element to add
-		 * @param	callBackFunction	Function	> Callback function for the element
-		 * @param	separatorBefore		Boolean		> Specifies wether a separator must be added before the element or not
+		 * @param	menuLabel				String		> Label of the element to add
+		 * @param	callBackFunction		Function	> Callback function for the element
+		 * @param	separatorBefore		Boolean	> Specifies wether a separator must be added before the element or not
+		 * @param	deactivated			Boolean	> If the element must be deactivated or not
 		 */
-		public static function addElementToMenu(menuName:String, menuLabel:String, callBackFunction:Function, separatorBefore:Boolean = false):void {
-			
-			if (callBackFunction == null) {
-				var e:Error = new Error();
-				e.name = "CustomMenuManager Error";
-				e.message = "This function is not a valid callback function for the \"" + menuLabel + "\" element. Please check arguments";
-				throw e;
-				return;
-			}
+		public static function addElementToMenu(menuName:String, menuLabel:String, callBackFunction:Function = null, separatorBefore:Boolean = false, deactivated:Boolean = false):void {
 			
 			var data:CustomMenuData = _getMenuData(menuName);
 			if (!data) {
@@ -92,7 +94,12 @@
 				return;
 			}
 			
-			data.addElement(menuLabel, callBackFunction, separatorBefore);
+			if (_willHaveSeparatorBefore) {
+				separatorBefore = true;
+				_willHaveSeparatorBefore = false;
+			}
+			
+			data.addElement(menuLabel, callBackFunction, separatorBefore, deactivated);
 			
 		}
 		
