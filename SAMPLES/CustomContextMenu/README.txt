@@ -1,0 +1,2 @@
+The CustomContextMenu files are some old classes when the Flash Player integrated no way of using the mouse right-click.
+Since Flash Player 11.2 the right click is supported, so these classes needs to be reworked to use custom components instead of Flash-native context menus.
